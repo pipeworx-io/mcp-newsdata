@@ -699,7 +699,7 @@ const tools: McpToolExport['tools'] = [
   {
     name: 'latest_news',
     description:
-      'Get the latest global news headlines and articles — world news, breaking news, and business/financial/stock-market news. Filter by keyword, country (2-letter, e.g. "us"), category (business, technology, politics, sports, health, science), and language. IMPORTANT: for stock-market / financial-market / economy / "world market news" questions, ALWAYS pass category: "business" — it returns real market-news outlets and filters out low-quality SEO/crypto-promo articles. Returns article title, description, link, source, publish date, category, and country. Paginate via the nextPage token. Examples: latest_news({ query: "stock market", category: "business" }) for world market news; latest_news({ query: "election", country: "us", category: "politics" }).',
+      'Latest global news headlines and articles from the NewsData.io news API — world news, breaking news, and business/financial/stock-market news. Filter by keyword, country (2-letter, e.g. "us"), category (business, technology, politics, sports, health, science), and language. IMPORTANT: for stock-market / financial-market / economy / "world market news" questions, ALWAYS pass category: "business" — it returns real market-news outlets and filters out low-quality SEO/crypto-promo articles. Returns article title, description, link, source, publish date, category, and country. Paginate via the nextPage token. Examples: latest_news({ query: "stock market", category: "business" }) for world market news; latest_news({ query: "election", country: "us", category: "politics" }).',
     inputSchema: {
       type: 'object' as const,
       properties: {
