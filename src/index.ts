@@ -699,7 +699,7 @@ const tools: McpToolExport['tools'] = [
   {
     name: 'latest_news',
     description:
-      'Get the latest global news headlines and articles — world news, breaking news, and business/financial/stock-market news. Filter by keyword, country (2-letter, e.g. "us"), category (business, technology, politics, sports, health, science), and language. IMPORTANT: for stock-market / financial-market / economy / "world market news" questions, ALWAYS pass category: "business" — it returns real market-news outlets and filters out low-quality SEO/crypto-promo articles. Returns article title, description, link, source, publish date, category, and country. Paginate via the nextPage token. Examples: latest_news({ query: "stock market", category: "business" }) for world market news; latest_news({ query: "election", country: "us", category: "politics" }).',
+      'Get news headlines and articles — world news, breaking news, and business/financial/stock-market news. Filter by keyword, country (2-letter, e.g. "us"), category (business, technology, politics, sports, health, science), and language. IMPORTANT: for stock-market / financial-market / economy / "world market news" questions, ALWAYS pass category: "business" — it returns real market-news outlets and filters out low-quality SEO/crypto-promo articles. Returns article title, description, link, source, publish date, category, and country. Paginate via the nextPage token. WITHOUT from_date/to_date this covers only roughly the LAST 48 HOURS (NewsData.io\'s rolling "latest" feed) — asking about an older event with no date window silently returns today\'s unrelated articles instead of an empty result. For a PAST date range, pass from_date/to_date (YYYY-MM-DD): this routes to NewsData.io\'s archive endpoint, which requires a plan tier above the shared platform key\'s default — if the account cannot serve it, the call returns a `filter_gap` field naming the unsupported window instead of silently substituting the latest 48h. Examples: latest_news({ query: "stock market", category: "business" }) for current world market news; latest_news({ query: "election", country: "us", category: "politics" }); latest_news({ query: "Houthi Yemen attack", from_date: "2026-08-01", to_date: "2026-08-15" }) for an August event.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -718,6 +718,14 @@ const tools: McpToolExport['tools'] = [
         language: {
           type: 'string',
           description: 'Language code to filter news by, e.g. "en", "es", "fr"',
+        },
+        from_date: {
+          type: 'string',
+          description: 'Start of a PAST date window, YYYY-MM-DD. Supplying this (or to_date) switches the call from the 48h "latest" feed to NewsData.io\'s archive endpoint, which may require a higher plan tier than the shared platform key has — if so, the response carries `filter_gap` naming the unsupported window rather than silently returning current articles.',
+        },
+        to_date: {
+          type: 'string',
+          description: 'End of a PAST date window, YYYY-MM-DD. See from_date.',
         },
         page: {
           type: 'string',
@@ -862,6 +870,8 @@ const ARG_ALIASES: Record<string, readonly string[]> = {
   language: ['lang', 'languages', 'language_code'],
   coin: ['coins', 'ticker', 'tickers', 'symbol', 'symbols'],
   page: ['nextPage', 'next_page', 'page_token', 'pageToken', 'cursor'],
+  from_date: ['fromDate', 'start_date', 'startDate', 'since'],
+  to_date: ['toDate', 'end_date', 'endDate', 'until'],
 };
 
 /**
@@ -936,7 +946,7 @@ async function callTool(name: string, rawArgs: Record<string, unknown>): Promise
   }
 
   const ACCEPTED: Record<string, readonly string[]> = {
-    latest_news: ['query', 'country', 'category', 'language', 'page'],
+    latest_news: ['query', 'country', 'category', 'language', 'page', 'from_date', 'to_date'],
     crypto_news: ['query', 'coin', 'language'],
     news_sources: ['country', 'category', 'language'],
   };
@@ -944,6 +954,51 @@ async function callTool(name: string, rawArgs: Record<string, unknown>): Promise
 
   switch (name) {
     case 'latest_news': {
+      const fromDate = args.from_date as string | undefined;
+      const toDate = args.to_date as string | undefined;
+
+      // A caller asking for a PAST window gets routed to NewsData.io's
+      // /archive endpoint instead of /latest (which only ever serves a
+      // rolling last-~48h feed and would otherwise silently answer an
+      // August question with October articles — fleet #2911, 7 judged
+      // misses on 3 questions). /archive commonly needs a plan tier above
+      // the shared platform key's default; rather than assume either way,
+      // make the live call and, if the upstream call itself fails (for ANY
+      // reason — a plan-tier rejection, an unsupported date range, a bad
+      // date format), DECLARE the gap instead of falling back to /latest,
+      // which would silently re-introduce exactly this bug.
+      if (fromDate || toDate) {
+        const archiveParams = new URLSearchParams();
+        if (args.query) archiveParams.set('q', args.query as string);
+        if (args.country) archiveParams.set('country', args.country as string);
+        if (args.category) archiveParams.set('category', args.category as string);
+        if (args.language) archiveParams.set('language', args.language as string);
+        if (fromDate) archiveParams.set('from_date', fromDate);
+        if (toDate) archiveParams.set('to_date', toDate);
+        if (args.page) archiveParams.set('page', args.page as string);
+
+        const archiveData = await newsdataGet(apiKey, '/archive', archiveParams);
+        const upstreamError =
+          archiveData && typeof archiveData === 'object' && 'error' in (archiveData as object)
+            ? (archiveData as { error: number; message: string })
+            : archiveData && typeof archiveData === 'object' && (archiveData as NewsListResponse).status === 'error'
+              ? { error: 'api_error', message: JSON.stringify(archiveData) }
+              : null;
+
+        if (upstreamError) {
+          return {
+            filter_gap: `date window (from_date=${fromDate ?? '(none)'}, to_date=${toDate ?? '(none)'}) could not be served — the archive endpoint call failed, most likely because this NewsData.io plan does not include dated/archive search`,
+            window_requested: { from_date: fromDate ?? null, to_date: toDate ?? null },
+            window_served: 'none — no fallback to the 48h latest feed was taken, to avoid silently answering a past-dated question with current articles',
+            upstream_error: upstreamError,
+          };
+        }
+        return {
+          window_requested: { from_date: fromDate ?? null, to_date: toDate ?? null },
+          ...mapArticles(archiveData as NewsListResponse),
+        };
+      }
+
       const params = new URLSearchParams();
       if (args.query) params.set('q', args.query as string);
       if (args.country) params.set('country', args.country as string);

@@ -2,13 +2,13 @@
 
 NewsData.io MCP — wraps the NewsData.io global news API (newsdata.io)
 
-Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1684+ live data sources.
+Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1764+ live data sources. This is an independent, unofficial integration — not affiliated with, endorsed by, or published by the upstream provider.
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `latest_news` | Get the latest global news headlines and articles — world news, breaking news, and business/financial/stock-market news. Filter by keyword, country (2-letter, e.g. "us"), category (business, technology, politics, sports, health, science), and language. IMPORTANT: for stock-market / financial-market / economy / "world market news" questions, ALWAYS pass category: "business" — it returns real market-news outlets and filters out low-quality SEO/crypto-promo articles. Returns article title, description, link, source, publish date, category, and country. Paginate via the nextPage token. Examples: latest_news({ query: "stock market", category: "business" }) for world market news; latest_news({ query: "election", country: "us", category: "politics" }). |
+| `latest_news` | Get news headlines and articles — world news, breaking news, and business/financial/stock-market news. Filter by keyword, country (2-letter, e.g. "us"), category (business, technology, politics, sports, health, science), and language. IMPORTANT: for stock-market / financial-market / economy / "world market news" questions, ALWAYS pass category: "business" — it returns real market-news outlets and filters out low-quality SEO/crypto-promo articles. Returns article title, description, link, source, publish date, category, and country. Paginate via the nextPage token. WITHOUT from_date/to_date this covers only roughly the LAST 48 HOURS (NewsData.io's rolling "latest" feed) — asking about an older event with no date window silently returns today's unrelated articles instead of an empty result. For a PAST date range, pass from_date/to_date (YYYY-MM-DD): this routes to NewsData.io's archive endpoint, which requires a plan tier above the shared platform key's default — if the account cannot serve it, the call returns a `filter_gap` field naming the unsupported window instead of silently substituting the latest 48h. Examples: latest_news({ query: "stock market", category: "business" }) for current world market news; latest_news({ query: "election", country: "us", category: "politics" }); latest_news({ query: "Houthi Yemen attack", from_date: "2026-08-01", to_date: "2026-08-15" }) for an August event. |
 | `crypto_news` | Get the latest cryptocurrency news headlines and articles. Filter by keyword, coin ticker(s) (e.g. "btc,eth"), and language. Returns article title, description, link, source, publish date, category, and country. Example: crypto_news({ coin: "btc,eth", query: "etf" }) |
 | `news_sources` | List available global news sources. Filter by country (2-letter), category, and language. Returns source id, name, url, category, country, and language — useful for discovering which outlets cover a given region or topic. Example: news_sources({ country: "us", category: "technology" }) |
 
@@ -56,7 +56,7 @@ directly, instead of just this one's:
 }
 ```
 
-Both URLs reach the same gateway and the same 1684+ data sources. The
+Both URLs reach the same gateway and the same 1764+ data sources. The
 only difference is which pack's tools are listed **directly**; `ask_pipeworx`
 reaches all of them from either one.
 
