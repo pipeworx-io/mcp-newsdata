@@ -1,6 +1,6 @@
 {
   "name": "@pipeworx/mcp-newsdata",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "NewsData.io MCP — wraps the NewsData.io global news API (newsdata.io)",
   "type": "module",
   "main": "src/index.ts",
@@ -26,7 +26,7 @@
     "@cloudflare/workers-types": "^4.20260405.1"
   },
   "pipeworx": {
-    "sourceHash": "v1-31564baff3859f4b9d1dd873ff7eb95e691717035f02dd0a9a9ae9c0d9d1c492",
-    "sourceCommit": "0ce6905893fe8da0d285be2f05754a4200d67371"
+    "sourceHash": "v1-cc46b5452257982114d1624bb3b6c9f72020b0320b506803f242d709c09965eb",
+    "sourceCommit": "774de7f685a75e02d0b828d24a7b94794102152c"
   }
 }
