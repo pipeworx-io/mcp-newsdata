@@ -1,12 +1,20 @@
 {
   "name": "@pipeworx/mcp-newsdata",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "NewsData.io MCP — wraps the NewsData.io global news API (newsdata.io)",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./tools.json": "./tools.json",
+    "./package.json": "./package.json"
+  },
   "bin": {
     "mcp-newsdata": "bin/cli.js"
+  },
+  "files": ["bin/", "lib/", "tools.json", "server.json"],
+  "engines": {
+    "node": ">=18"
   },
   "keywords": ["mcp", "mcp-server", "model-context-protocol", "pipeworx", "newsdata"],
   "license": "MIT",
@@ -14,19 +22,12 @@
     "type": "git",
     "url": "git+https://github.com/pipeworx-io/mcp-newsdata.git"
   },
-  "scripts": {
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "tsx": "^4.19.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3",
-    "@cloudflare/workers-types": "^4.20260405.1"
-  },
+  "mcpName": "io.github.pipeworx-io/newsdata",
   "pipeworx": {
-    "sourceHash": "v1-cc46b5452257982114d1624bb3b6c9f72020b0320b506803f242d709c09965eb",
-    "sourceCommit": "774de7f685a75e02d0b828d24a7b94794102152c"
+    "mode": "gateway",
+    "slug": "newsdata",
+    "gatewaySlug": "newsdata",
+    "sourceHash": "v1-8d6b1d9869492cfba819ca9b5c73259b4bab122938e9a281f9adaf1afd721a84",
+    "sourceCommit": "5c89d6abb778d45da5d92002eb251978622bedf9"
   }
 }
